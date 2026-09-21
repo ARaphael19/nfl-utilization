@@ -130,7 +130,7 @@
 <script>
 
 const DATA_URL =
-    "https://github.com/nflverse/nflverse-data/releases/latest/download/players.csv";
+    "https://github.com/nflverse/nflverse-data/releases/download/players/players.csv";
 
 const teamNames = {
     ARI: "Arizona Cardinals",
@@ -294,7 +294,7 @@ function renderTeams() {
                                 teamPlayers.map(player => `
                                     <tr>
                                         <td>
-                                            ${player.display_name || player.player_name || "Unknown"}
+                                            ${player.display_name || player.full_name || "Unknown"}
                                         </td>
 
                                         <td>
