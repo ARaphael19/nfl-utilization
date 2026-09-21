@@ -27,7 +27,7 @@ jobs:
           curl -L "https://github.com/nflverse/nflverse-data/releases/download/weekly_rosters/roster_weekly_2026.csv" \
             -o data/roster_weekly_2026.csv
 
-           - name: Download weekly player stats
+      - name: Download weekly player stats
         run: |
           curl -L "https://github.com/nflverse/nflverse-data/releases/download/stats_player/stats_player_week_2026.csv" \
             -o data/player_stats.csv
