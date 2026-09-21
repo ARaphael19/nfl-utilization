@@ -32,6 +32,11 @@ jobs:
           curl -L "https://github.com/nflverse/nflverse-data/releases/download/stats_player/stats_player_week_2026.csv" \
             -o data/player_stats.csv
 
+      - name: Download 2026 snap counts
+        run: |
+          curl -L "https://github.com/nflverse/nflverse-data/releases/download/snap_counts/snap_counts_2026.csv" \
+            -o data/snap_counts.csv
+
       - name: Save updated data
         run: |
           git config user.name "github-actions[bot]"
