@@ -22,10 +22,15 @@ jobs:
           curl -L "https://github.com/nflverse/nflverse-data/releases/download/players/players.csv" \
             -o data/players.csv
 
+      - name: Download 2026 weekly roster data
+        run: |
+          curl -L "https://github.com/nflverse/nflverse-data/releases/download/weekly_rosters/roster_weekly_2026.csv" \
+            -o data/roster_weekly_2026.csv
+
       - name: Save updated data
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add data/players.csv
-          git diff --cached --quiet || git commit -m "Update NFL player data"
+          git add data/players.csv data/roster_weekly_2026.csv
+          git diff --cached --quiet || git commit -m "Update NFL data"
           git push
