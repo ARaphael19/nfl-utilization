@@ -137,6 +137,20 @@
         const csvText = await response.text();
 
         rosterData = parseCSV(csvText);
+        const latestPlayers = {};
+
+rosterData.forEach(player => {
+  const id = player.gsis_id;
+
+  if (
+    !latestPlayers[id] ||
+    Number(player.week) > Number(latestPlayers[id].week)
+  ) {
+    latestPlayers[id] = player;
+  }
+});
+
+rosterData = Object.values(latestPlayers);
 
         document.getElementById("status").textContent =
           `Loaded ${rosterData.length.toLocaleString()} roster records.`;
