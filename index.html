@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NFL Utilization</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f4f5f7;
+            margin: 0;
+            color: #222;
+        }
+
+        header {
+            background: #111827;
+            color: white;
+            padding: 25px;
+            text-align: center;
+        }
+
+        header h1 {
+            margin: 0 0 8px 0;
+        }
+
+        header p {
+            margin: 0;
+            color: #cbd5e1;
+        }
+
+        .controls {
+            max-width: 1200px;
+            margin: 25px auto;
+            padding: 0 20px;
+        }
+
+        select {
+            font-size: 16px;
+            padding: 10px 14px;
+            border-radius: 6px;
+            border: 1px solid #ccc;
+        }
+
+        .team {
+            max-width: 1200px;
+            margin: 25px auto;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            overflow: hidden;
+        }
+
+        .team-header {
+            background: #e5e7eb;
+            padding: 14px 18px;
+            font-size: 20px;
+            font-weight: bold;
+        }
+
+        .table-container {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 1000px;
+        }
+
+        th, td {
+            padding: 10px 12px;
+            text-align: center;
+            border-bottom: 1px solid #e5e7eb;
+            white-space: nowrap;
+        }
+
+        th {
+            background: #f9fafb;
+            font-size: 13px;
+        }
+
+        td:first-child,
+        th:first-child {
+            text-align: left;
+        }
+
+        tr:hover {
+            background: #f8fafc;
+        }
+    </style>
+</head>
+
+<body>
+
+<header>
+    <h1>NFL Utilization</h1>
+    <p>Weekly player usage and opportunity</p>
+</header>
+
+<div class="controls">
+    <label for="position"><strong>Position:</strong></label>
+
+    <select id="position">
+        <option value="RB">Running Backs</option>
+        <option value="WR">Wide Receivers</option>
+        <option value="TE">Tight Ends</option>
+    </select>
+</div>
+
+<div class="team">
+
+    <div class="team-header">
+        Arizona Cardinals
+    </div>
+
+    <div class="table-container">
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Player</th>
+                    <th>Pos</th>
+                    <th>Snap %</th>
+                    <th>Route %</th>
+                    <th>RZ Snap %</th>
+                    <th>RZ Route %</th>
+                    <th>Rush %</th>
+                    <th>Target %</th>
+                    <th>TPPR</th>
+                    <th>YPRR</th>
+                    <th>YPC</th>
+                    <th>ADOT</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                <tr>
+                    <td>Example Player</td>
+                    <td>RB</td>
+                    <td>72%</td>
+                    <td>65%</td>
+                    <td>80%</td>
+                    <td>70%</td>
+                    <td>55%</td>
+                    <td>12%</td>
+                    <td>0.18</td>
+                    <td>1.42</td>
+                    <td>4.8</td>
+                    <td>3.2</td>
+                </tr>
+            </tbody>
+        </table>
+
+    </div>
+
+</div>
+
+</body>
+</html>
