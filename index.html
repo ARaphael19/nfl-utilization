@@ -1,340 +1,243 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NFL Utilization</title>
 
-    <title>NFL Utilization</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      background: #f4f6f8;
+      color: #222;
+    }
 
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background: #f4f5f7;
-            margin: 0;
-            color: #222;
-        }
+    header {
+      background: #111827;
+      color: white;
+      padding: 24px;
+    }
 
-        header {
-            background: #111827;
-            color: white;
-            padding: 25px;
-            text-align: center;
-        }
+    header h1 {
+      margin: 0 0 8px 0;
+    }
 
-        header h1 {
-            margin: 0 0 8px 0;
-        }
+    header p {
+      margin: 0;
+      color: #d1d5db;
+    }
 
-        header p {
-            margin: 0;
-            color: #cbd5e1;
-        }
+    .controls {
+      padding: 20px;
+      background: white;
+      border-bottom: 1px solid #ddd;
+    }
 
-        .controls {
-            max-width: 1200px;
-            margin: 25px auto;
-            padding: 0 20px;
-        }
+    select {
+      font-size: 16px;
+      padding: 10px 14px;
+      border-radius: 6px;
+      border: 1px solid #bbb;
+      background: white;
+    }
 
-        select {
-            font-size: 16px;
-            padding: 10px 14px;
-            border-radius: 6px;
-            border: 1px solid #ccc;
-            background: white;
-        }
+    #status {
+      margin-top: 12px;
+      color: #555;
+    }
 
-        #status {
-            max-width: 1200px;
-            margin: 0 auto 20px auto;
-            padding: 0 20px;
-            color: #555;
-        }
+    .teams {
+      padding: 20px;
+    }
 
-        .team {
-            max-width: 1200px;
-            margin: 25px auto;
-            background: white;
-            border-radius: 10px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-            overflow: hidden;
-        }
+    .team {
+      background: white;
+      margin-bottom: 24px;
+      border-radius: 10px;
+      overflow: hidden;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    }
 
-        .team-header {
-            background: #e5e7eb;
-            padding: 14px 18px;
-            font-size: 20px;
-            font-weight: bold;
-        }
+    .team-header {
+      background: #e5e7eb;
+      padding: 14px 18px;
+      font-size: 20px;
+      font-weight: bold;
+    }
 
-        .table-container {
-            overflow-x: auto;
-        }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
 
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            min-width: 900px;
-        }
+    th, td {
+      padding: 10px 12px;
+      text-align: left;
+      border-bottom: 1px solid #eee;
+    }
 
-        th, td {
-            padding: 10px 12px;
-            text-align: center;
-            border-bottom: 1px solid #e5e7eb;
-            white-space: nowrap;
-        }
+    th {
+      background: #f9fafb;
+      font-size: 13px;
+      text-transform: uppercase;
+      color: #555;
+    }
 
-        th {
-            background: #f9fafb;
-            font-size: 13px;
-        }
+    tr:last-child td {
+      border-bottom: none;
+    }
 
-        td:first-child,
-        th:first-child {
-            text-align: left;
-        }
-
-        tr:hover {
-            background: #f8fafc;
-        }
-
-        .error {
-            color: #b91c1c;
-        }
-    </style>
+    .empty {
+      padding: 16px;
+      color: #777;
+    }
+  </style>
 </head>
 
 <body>
 
-<header>
+  <header>
     <h1>NFL Utilization</h1>
-    <p>Weekly player usage and opportunity</p>
-</header>
+    <p>Player usage and fantasy analysis</p>
+  </header>
 
-<div class="controls">
+  <div class="controls">
     <label for="position"><strong>Position:</strong></label>
 
     <select id="position">
-        <option value="RB">Running Backs</option>
-        <option value="WR">Wide Receivers</option>
-        <option value="TE">Tight Ends</option>
+      <option value="RB">Running Backs</option>
+      <option value="WR">Wide Receivers</option>
+      <option value="TE">Tight Ends</option>
     </select>
-</div>
 
-<div id="status">
-    Loading NFL player data...
-</div>
+    <div id="status">Loading NFL data...</div>
+  </div>
 
-<div id="teams"></div>
+  <div id="teams" class="teams"></div>
 
-<script>
+  <script>
+    const teams = [
+      "ARI", "ATL", "BAL", "BUF", "CAR", "CHI", "CIN", "CLE",
+      "DAL", "DEN", "DET", "GB", "HOU", "IND", "JAX", "KC",
+      "LV", "LAC", "LAR", "MIA", "MIN", "NE", "NO", "NYG",
+      "NYJ", "PHI", "PIT", "SF", "SEA", "TB", "TEN", "WAS"
+    ];
 
-const DATA_URL = "data/players.csv";
+    let rosterData = [];
 
-const teamNames = {
-    ARI: "Arizona Cardinals",
-    ATL: "Atlanta Falcons",
-    BAL: "Baltimore Ravens",
-    BUF: "Buffalo Bills",
-    CAR: "Carolina Panthers",
-    CHI: "Chicago Bears",
-    CIN: "Cincinnati Bengals",
-    CLE: "Cleveland Browns",
-    DAL: "Dallas Cowboys",
-    DEN: "Denver Broncos",
-    DET: "Detroit Lions",
-    GB: "Green Bay Packers",
-    HOU: "Houston Texans",
-    IND: "Indianapolis Colts",
-    JAX: "Jacksonville Jaguars",
-    KC: "Kansas City Chiefs",
-    LV: "Las Vegas Raiders",
-    LAC: "Los Angeles Chargers",
-    LAR: "Los Angeles Rams",
-    MIA: "Miami Dolphins",
-    MIN: "Minnesota Vikings",
-    NE: "New England Patriots",
-    NO: "New Orleans Saints",
-    NYG: "New York Giants",
-    NYJ: "New York Jets",
-    PHI: "Philadelphia Eagles",
-    PIT: "Pittsburgh Steelers",
-    SF: "San Francisco 49ers",
-    SEA: "Seattle Seahawks",
-    TB: "Tampa Bay Buccaneers",
-    TEN: "Tennessee Titans",
-    WAS: "Washington Commanders"
-};
-
-let players = [];
-
-async function loadPlayers() {
-
-    try {
-
-        const response = await fetch(DATA_URL);
+    async function loadData() {
+      try {
+        const response = await fetch("data/roster_weekly_2026.csv");
 
         if (!response.ok) {
-            throw new Error("Could not load players.csv");
+          throw new Error("Could not load roster data.");
         }
 
-        const text = await response.text();
+        const csvText = await response.text();
 
-        const rows = parseCSV(text);
-
-        players = rows.filter(player =>
-            ["RB", "WR", "TE"].includes(player.position)
-        );
+        rosterData = parseCSV(csvText);
 
         document.getElementById("status").textContent =
-            `Loaded ${players.length} NFL players.`;
+          `Loaded ${rosterData.length.toLocaleString()} roster records.`;
 
-        renderTeams();
+        displayTeams();
 
-    } catch (error) {
-
-        document.getElementById("status").innerHTML =
-            `<span class="error">
-                Could not load NFL data. ${error.message}
-            </span>`;
-
+      } catch (error) {
         console.error(error);
+
+        document.getElementById("status").textContent =
+          "There was a problem loading the NFL data.";
+      }
     }
-}
 
+    function parseCSV(text) {
+      const lines = text.trim().split(/\r?\n/);
 
-function parseCSV(text) {
+      const headers = lines[0].split(",");
 
-    const lines = text.trim().split(/\r?\n/);
-
-    const headers = lines[0]
-        .split(",")
-        .map(header => header.trim());
-
-    return lines.slice(1).map(line => {
-
+      return lines.slice(1).map(line => {
         const values = line.split(",");
 
-        const player = {};
+        const row = {};
 
         headers.forEach((header, index) => {
-            player[header] = values[index]?.trim() || "";
+          row[header] = values[index] || "";
         });
 
-        return player;
-    });
-}
+        return row;
+      });
+    }
 
-
-function renderTeams() {
-
-    const selectedPosition =
+    function displayTeams() {
+      const selectedPosition =
         document.getElementById("position").value;
 
-    const container =
+      const container =
         document.getElementById("teams");
 
-    container.innerHTML = "";
+      container.innerHTML = "";
 
-    const filteredPlayers =
-        players.filter(player =>
-            player.position === selectedPosition
+      teams.forEach(team => {
+
+        const players = rosterData.filter(player =>
+          player.team === team &&
+          player.position === selectedPosition
         );
 
-    const playersByTeam = {};
+        const teamDiv = document.createElement("div");
+        teamDiv.className = "team";
 
-    filteredPlayers.forEach(player => {
+        const header = document.createElement("div");
+        header.className = "team-header";
+        header.textContent = team;
 
-        const team = player.team_abbr || "FA";
+        teamDiv.appendChild(header);
 
-        if (!playersByTeam[team]) {
-            playersByTeam[team] = [];
+        if (players.length === 0) {
+
+          const empty = document.createElement("div");
+          empty.className = "empty";
+          empty.textContent = "No players found.";
+
+          teamDiv.appendChild(empty);
+
+        } else {
+
+          const table = document.createElement("table");
+
+          table.innerHTML = `
+            <thead>
+              <tr>
+                <th>Player Name</th>
+                <th>Position</th>
+                <th>Week</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${players.map(player => `
+                <tr>
+                  <td>${player.full_name}</td>
+                  <td>${player.position}</td>
+                  <td>${player.week}</td>
+                </tr>
+              `).join("")}
+            </tbody>
+          `;
+
+          teamDiv.appendChild(table);
         }
 
-        playersByTeam[team].push(player);
-    });
+        container.appendChild(teamDiv);
+      });
+    }
 
-    Object.keys(teamNames)
-        .sort((a, b) =>
-            teamNames[a].localeCompare(teamNames[b])
-        )
-        .forEach(team => {
+    document
+      .getElementById("position")
+      .addEventListener("change", displayTeams);
 
-            const teamPlayers =
-                playersByTeam[team] || [];
-
-            const teamDiv =
-                document.createElement("div");
-
-            teamDiv.className = "team";
-
-            teamDiv.innerHTML = `
-                <div class="team-header">
-                    ${teamNames[team]}
-                </div>
-
-                <div class="table-container">
-
-                    <table>
-
-                        <thead>
-                            <tr>
-                                <th>Player</th>
-                                <th>Position</th>
-                                <th>Status</th>
-                            </tr>
-                        </thead>
-
-                        <tbody>
-
-                            ${
-                                teamPlayers.length
-                                ?
-                                teamPlayers.map(player => `
-                                    <tr>
-                                        <td>
-                                            ${player.display_name || player.full_name || "Unknown"}
-                                        </td>
-
-                                        <td>
-                                            ${player.position}
-                                        </td>
-
-                                        <td>
-                                            ${player.status || ""}
-                                        </td>
-                                    </tr>
-                                `).join("")
-                                :
-                                `
-                                    <tr>
-                                        <td colspan="3">
-                                            No players found
-                                        </td>
-                                    </tr>
-                                `
-                            }
-
-                        </tbody>
-
-                    </table>
-
-                </div>
-            `;
-
-            container.appendChild(teamDiv);
-        });
-}
-
-
-document
-    .getElementById("position")
-    .addEventListener("change", renderTeams);
-
-
-loadPlayers();
-
-</script>
+    loadData();
+  </script>
 
 </body>
 </html>
