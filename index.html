@@ -103,10 +103,7 @@
   </header>
 
   <div class="controls">
-
-    <label for="position">
-      <strong>Position:</strong>
-    </label>
+    <label for="position"><strong>Position:</strong></label>
 
     <select id="position">
       <option value="RB">Running Backs</option>
@@ -114,16 +111,12 @@
       <option value="TE">Tight Ends</option>
     </select>
 
-    <div id="status">
-      Loading NFL data...
-    </div>
-
+    <div id="status">Loading NFL data...</div>
   </div>
 
   <div id="teams" class="teams"></div>
 
   <script>
-
     const teams = [
       "ARI", "ATL", "BAL", "BUF", "CAR", "CHI", "CIN", "CLE",
       "DAL", "DEN", "DET", "GB", "HOU", "IND", "JAX", "KC",
@@ -134,11 +127,8 @@
     let rosterData = [];
 
     async function loadData() {
-
       try {
-
-        const response =
-          await fetch("data/roster_weekly_2026.csv");
+        const response = await fetch("data/roster_weekly_2026.csv");
 
         if (!response.ok) {
           throw new Error("Could not load roster data.");
@@ -148,72 +138,38 @@
 
         rosterData = parseCSV(csvText);
 
-        /*
-          The roster file contains one record per player
-          for each week.
-
-          Find the latest week in the file and only show
-          that week's roster.
-        */
-
-        const latestWeek = Math.max(
-          ...rosterData
-            .map(player => Number(player.week))
-            .filter(week => !isNaN(week))
-        );
-
-        rosterData = rosterData.filter(
-          player => Number(player.week) === latestWeek
-        );
-
         document.getElementById("status").textContent =
-          `Showing Week ${latestWeek} roster data.`;
+          `Loaded ${rosterData.length.toLocaleString()} roster records.`;
 
         displayTeams();
 
       } catch (error) {
-
         console.error(error);
 
         document.getElementById("status").textContent =
           "There was a problem loading the NFL data.";
-
       }
-
     }
 
-
     function parseCSV(text) {
+      const lines = text.trim().split(/\r?\n/);
 
-      const lines =
-        text.trim().split(/\r?\n/);
-
-      const headers =
-        lines[0].split(",");
+      const headers = lines[0].split(",");
 
       return lines.slice(1).map(line => {
-
-        const values =
-          line.split(",");
+        const values = line.split(",");
 
         const row = {};
 
         headers.forEach((header, index) => {
-
-          row[header] =
-            values[index] || "";
-
+          row[header] = values[index] || "";
         });
 
         return row;
-
       });
-
     }
 
-
     function displayTeams() {
-
       const selectedPosition =
         document.getElementById("position").value;
 
@@ -222,98 +178,65 @@
 
       container.innerHTML = "";
 
-
       teams.forEach(team => {
 
-        const players =
-          rosterData.filter(player =>
-            player.team === team &&
-            player.position === selectedPosition
-          );
+        const players = rosterData.filter(player =>
+          player.team === team &&
+          player.position === selectedPosition
+        );
 
-
-        const teamDiv =
-          document.createElement("div");
-
+        const teamDiv = document.createElement("div");
         teamDiv.className = "team";
 
-
-        const header =
-          document.createElement("div");
-
+        const header = document.createElement("div");
         header.className = "team-header";
-
         header.textContent = team;
 
         teamDiv.appendChild(header);
 
-
         if (players.length === 0) {
 
-          const empty =
-            document.createElement("div");
-
+          const empty = document.createElement("div");
           empty.className = "empty";
-
-          empty.textContent =
-            "No players found.";
+          empty.textContent = "No players found.";
 
           teamDiv.appendChild(empty);
 
         } else {
 
-          const table =
-            document.createElement("table");
+          const table = document.createElement("table");
 
           table.innerHTML = `
-
             <thead>
-
               <tr>
                 <th>Player Name</th>
                 <th>Position</th>
                 <th>Week</th>
               </tr>
-
             </thead>
-
             <tbody>
-
               ${players.map(player => `
-
                 <tr>
                   <td>${player.full_name}</td>
                   <td>${player.position}</td>
                   <td>${player.week}</td>
                 </tr>
-
               `).join("")}
-
             </tbody>
-
           `;
 
           teamDiv.appendChild(table);
-
         }
 
         container.appendChild(teamDiv);
-
       });
-
     }
-
 
     document
       .getElementById("position")
-      .addEventListener(
-        "change",
-        displayTeams
-      );
-
+      .addEventListener("change", displayTeams);
 
     loadData();
-
   </script>
 
 </body>
