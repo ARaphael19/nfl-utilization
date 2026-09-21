@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NFL Utilization</title>
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      background: #f4f6f8;
+      color: #222;
+    }
+
+    header {
+      background: #111827;
+      color: white;
+      padding: 24px;
+    }
+
+    header h1 {
+      margin: 0 0 8px 0;
+    }
+
+    header p {
+      margin: 0;
+      color: #d1d5db;
+    }
+
+    .controls {
+      padding: 20px;
+      background: white;
+      border-bottom: 1px solid #ddd;
+    }
+
+    select {
+      font-size: 16px;
+      padding: 10px 14px;
+      border-radius: 6px;
+      border: 1px solid #bbb;
+      background: white;
+    }
+
+    #status {
+      margin-top: 12px;
+      color: #555;
+    }
+
+    .teams {
+      padding: 20px;
+    }
+
+    .team {
+      background: white;
+      margin-bottom: 24px;
+      border-radius: 10px;
+      overflow: hidden;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    }
+
+    .team-header {
+      background: #e5e7eb;
+      padding: 14px 18px;
+      font-size: 20px;
+      font-weight: bold;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    th, td {
+      padding: 10px 12px;
+      text-align: left;
+      border-bottom: 1px solid #eee;
+    }
+
+    th {
+      background: #f9fafb;
+      font-size: 13px;
+      text-transform: uppercase;
+      color: #555;
+    }
+
+    tr:last-child td {
+      border-bottom: none;
+    }
+
+    .empty {
+      padding: 16px;
+      color: #777;
+    }
+  </style>
+</head>
+
+<body>
+
+  <header>
+    <h1>NFL Utilization</h1>
+    <p>Player usage and fantasy analysis</p>
+  </header>
+
+  <div class="controls">
+    <label for="position"><strong>Position:</strong></label>
+
+    <select id="position">
+      <option value="RB">Running Backs</option>
+      <option value="WR">Wide Receivers</option>
+      <option value="TE">Tight Ends</option>
+    </select>
+
+    <div id="status">Loading NFL data...</div>
+  </div>
+
+  <div id="teams" class="teams"></div>
+
+  <script>
+    const teams = [
+      "ARI", "ATL", "BAL", "BUF", "CAR", "CHI", "CIN", "CLE",
+      "DAL", "DEN", "DET", "GB", "HOU", "IND", "JAX", "KC",
+      "LV", "LAC", "LAR", "MIA", "MIN", "NE", "NO", "NYG",
+      "NYJ", "PHI", "PIT", "SF", "SEA", "TB", "TEN", "WAS"
+    ];
+
+    let rosterData = [];
+
+    async function loadData() {
+      try {
+        const response = await fetch("data/roster_weekly_2026.csv");
+
+        if (!response.ok) {
+          throw new Error("Could not load roster data.");
+        }
+
+        const csvText = await response.text();
+
+        rosterData = parseCSV(csvText);
+
+        document.getElementById("status").textContent =
+          `Loaded ${rosterData.length.toLocaleString()} roster records.`;
+
+        displayTeams();
+
+      } catch (error) {
+        console.error(error);
+
+        document.getElementById("status").textContent =
+          "There was a problem loading the NFL data.";
+      }
+    }
+
+    function parseCSV(text) {
+      const lines = text.trim().split(/\r?\n/);
+
+      const headers = lines[0].split(",");
+
+      return lines.slice(1).map(line => {
+        const values = line.split(",");
+
+        const row = {};
+
+        headers.forEach((header, index) => {
+          row[header] = values[index] || "";
+        });
+
+        return row;
+      });
+    }
+
+    function displayTeams() {
+      const selectedPosition =
+        document.getElementById("position").value;
+
+      const container =
+        document.getElementById("teams");
+
+      container.innerHTML = "";
+
+      teams.forEach(team => {
+
+        const players = rosterData.filter(player =>
+          player.team === team &&
+          player.position === selectedPosition
+        );
+
+        const teamDiv = document.createElement("div");
+        teamDiv.className = "team";
+
+        const header = document.createElement("div");
+        header.className = "team-header";
+        header.textContent = team;
+
+        teamDiv.appendChild(header);
+
+        if (players.length === 0) {
+
+          const empty = document.createElement("div");
+          empty.className = "empty";
+          empty.textContent = "No players found.";
+
+          teamDiv.appendChild(empty);
+
+        } else {
+
+          const table = document.createElement("table");
+
+          table.innerHTML = `
+            <thead>
+              <tr>
+                <th>Player Name</th>
+                <th>Position</th>
+                <th>Week</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${players.map(player => `
+                <tr>
+                  <td>${player.full_name}</td>
+                  <td>${player.position}</td>
+                  <td>${player.week}</td>
+                </tr>
+              `).join("")}
+            </tbody>
+          `;
+
+          teamDiv.appendChild(table);
+        }
+
+        container.appendChild(teamDiv);
+      });
+    }
+
+    document
+      .getElementById("position")
+      .addEventListener("change", displayTeams);
+
+    loadData();
+  </script>
+
+</body>
+</html>
