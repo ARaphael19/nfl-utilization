@@ -35,17 +35,12 @@ jobs:
       - name: Download 2026 snap counts
         run: |
           curl -L "https://github.com/nflverse/nflverse-data/releases/download/snap_counts/snap_counts_2026.csv" \
-            -o data/snap_counts.csv
-
-      - name: Download 2026 Next Gen Stats receiving
-        run: |
-          curl -L "https://github.com/nflverse/nflverse-data/releases/download/nextgen_stats/ngs_receiving.csv" \
-            -o data/ngs_receiving.csv     
+            -o data/snap_counts.csv    
       
       - name: Save updated data
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add data/players.csv data/roster_weekly_2026.csv data/player_stats.csv data/snap_counts.csv data/ngs_receiving.csv
+          git add data/players.csv data/roster_weekly_2026.csv data/player_stats.csv data/snap_counts.csv
           git diff --cached --quiet || git commit -m "Update NFL data"
           git push
