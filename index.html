@@ -125,6 +125,7 @@
     ];
 
     let rosterData = [];
+    let snapData = [];
 
     async function loadData() {
       try {
@@ -137,6 +138,15 @@
         const csvText = await response.text();
 
         rosterData = parseCSV(csvText);
+        const snapResponse = await fetch("data/snap_counts.csv");
+
+        if (!snapResponse.ok) {
+        throw new Error("Could not load snap count data.");
+        }
+
+        const snapText = await snapResponse.text();
+
+        snapData = parseCSV(snapText);
         const latestPlayers = {};
 
 rosterData.forEach(player => {
@@ -151,6 +161,17 @@ rosterData.forEach(player => {
 });
 
 rosterData = Object.values(latestPlayers);
+
+rosterData.forEach(player => {
+  const snap = snapData.find(s =>
+    s.team === player.team &&
+    s.position === player.position &&
+    Number(s.week) === Number(player.week) &&
+    s.player === player.full_name
+  );
+
+  player.offense_pct = snap ? snap.offense_pct : "";
+});        
 
         document.getElementById("status").textContent =
           `Loaded ${rosterData.length.toLocaleString()} roster records.`;
@@ -226,14 +247,16 @@ rosterData = Object.values(latestPlayers);
                 <th>Player Name</th>
                 <th>Position</th>
                 <th>Week</th>
+                <th>Snap %</th>
               </tr>
             </thead>
             <tbody>
               ${players.map(player => `
                 <tr>
-                  <td>${player.full_name}</td>
-                  <td>${player.position}</td>
-                  <td>${player.week}</td>
+              <td>${player.full_name}</td>
+              <td>${player.position}</td>
+              <td>${player.week}</td>
+              <td>${player.offense_pct ? (Number(player.offense_pct) * 100).toFixed(1) + "%" : "—"}</td>
                 </tr>
               `).join("")}
             </tbody>
