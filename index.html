@@ -175,15 +175,20 @@ rosterData.forEach(player => {
 rosterData = Object.values(latestPlayers);
 
 rosterData.forEach(player => {
-  const snap = snapData.find(s =>
-    s.team === player.team &&
-    s.position === player.position &&
-    Number(s.week) === Number(player.week) &&
-    s.player === player.full_name
+
+  const playerInfo = playerData.find(p =>
+    p.gsis_id === player.gsis_id
   );
 
+  const snap = playerInfo
+    ? snapData.find(s =>
+        s.pfr_player_id === playerInfo.pfr_id &&
+        Number(s.week) === Number(player.week)
+      )
+    : null;
+
   player.offense_pct = snap ? snap.offense_pct : "";
-});        
+});
 
         document.getElementById("status").textContent =
           `Loaded ${rosterData.length.toLocaleString()} roster records.`;
