@@ -149,6 +149,9 @@
         const playerText = await playerResponse.text();
 
         playerData = parseCSV(playerText);
+        console.log("Player data:", playerData[0]);
+        console.log("Roster data:", rosterData[0]);
+        console.log("Snap data:", snapData[0]);
         
         const snapResponse = await fetch("data/snap_counts.csv");
 
