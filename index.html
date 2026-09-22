@@ -137,8 +137,19 @@
         }
 
         const csvText = await response.text();
-
+        
         rosterData = parseCSV(csvText);
+
+        const playerResponse = await fetch("data/players.csv");
+
+        if (!playerResponse.ok) {
+          throw new Error("Could not load player data.");
+        }
+
+        const playerText = await playerResponse.text();
+
+        playerData = parseCSV(playerText);
+        
         const snapResponse = await fetch("data/snap_counts.csv");
 
         if (!snapResponse.ok) {
