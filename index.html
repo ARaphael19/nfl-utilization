@@ -166,14 +166,19 @@
         const latestPlayers = {};
 
 rosterData.forEach(player => {
-  const id = player.gsis_id;
 
-  if (
-    !latestPlayers[id] ||
-    Number(player.week) > Number(latestPlayers[id].week)
-  ) {
-    latestPlayers[id] = player;
-  }
+  const playerInfo = playerData.find(p =>
+    p.gsis_id === player.gsis_id
+  );
+
+  const snap = playerInfo
+    ? snapData.find(s =>
+        s.pfr_player_id === playerInfo.pfr_id &&
+        Number(s.week) === 1
+      )
+    : null;
+
+  player.offense_pct = snap ? snap.offense_pct : "";
 });
 
 rosterData = Object.values(latestPlayers);
