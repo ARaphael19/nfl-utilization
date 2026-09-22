@@ -125,8 +125,6 @@
     ];
 
     let rosterData = [];
-    let snapData = [];
-    let playerData = [];
 
     async function loadData() {
       try {
@@ -137,67 +135,8 @@
         }
 
         const csvText = await response.text();
-        
+
         rosterData = parseCSV(csvText);
-
-        const playerResponse = await fetch("data/players.csv");
-
-        if (!playerResponse.ok) {
-          throw new Error("Could not load player data.");
-        }
-
-        const playerText = await playerResponse.text();
-
-        playerData = parseCSV(playerText);
-        console.log("Player data:", playerData[0]);
-        console.log("Roster data:", rosterData[0]);
-        console.log("Snap data:", snapData[0]);
-        
-        const snapResponse = await fetch("data/snap_counts.csv");
-
-        if (!snapResponse.ok) {
-        throw new Error("Could not load snap count data.");
-        }
-
-        const snapText = await snapResponse.text();
-
-        snapData = parseCSV(snapText);
-        console.log("Snap data length:", snapData.length);
-        const latestPlayers = {};
-
-rosterData.forEach(player => {
-
-  const playerInfo = playerData.find(p =>
-    p.gsis_id === player.gsis_id
-  );
-
-  const snap = playerInfo
-    ? snapData.find(s =>
-        s.pfr_player_id === playerInfo.pfr_id &&
-        Number(s.week) === 1
-      )
-    : null;
-
-  player.offense_pct = snap ? snap.offense_pct : "";
-});
-
-rosterData = Object.values(latestPlayers);
-
-rosterData.forEach(player => {
-
-  const playerInfo = playerData.find(p =>
-    p.gsis_id === player.gsis_id
-  );
-
-  const snap = playerInfo
-    ? snapData.find(s =>
-        s.pfr_player_id === playerInfo.pfr_id &&
-        Number(s.week) === Number(player.week)
-      )
-    : null;
-
-  player.offense_pct = snap ? snap.offense_pct : "";
-});
 
         document.getElementById("status").textContent =
           `Loaded ${rosterData.length.toLocaleString()} roster records.`;
@@ -273,16 +212,14 @@ rosterData.forEach(player => {
                 <th>Player Name</th>
                 <th>Position</th>
                 <th>Week</th>
-                <th>Snap %</th>
               </tr>
             </thead>
             <tbody>
               ${players.map(player => `
                 <tr>
-              <td>${player.full_name}</td>
-              <td>${player.position}</td>
-              <td>${player.week}</td>
-              <td>${player.offense_pct ? (Number(player.offense_pct) * 100).toFixed(1) + "%" : "—"}</td>
+                  <td>${player.full_name}</td>
+                  <td>${player.position}</td>
+                  <td>${player.week}</td>
                 </tr>
               `).join("")}
             </tbody>
