@@ -162,6 +162,7 @@
         const snapText = await snapResponse.text();
 
         snapData = parseCSV(snapText);
+        console.log("Snap data length:", snapData.length);
         const latestPlayers = {};
 
 rosterData.forEach(player => {
