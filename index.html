@@ -314,7 +314,17 @@ if (selectedWeek === "season") {
                   <td>${player.full_name}</td>
                   <td>${player.position}</td>
                   <td>${selectedWeek === "season" ? "Season" : player.week}</td>
-                  <td>-</td>
+                  <td>${
+  selectedWeek === "season"
+    ? "-"
+    : (
+        snapData.find(snap =>
+          snap.pfr_player_id === player.pfr_id &&
+          snap.team === player.team &&
+          Number(snap.week) === Number(player.week)
+        )?.offense_pct || "-"
+      )
+}</td>
                 </tr>
               `).join("")}
             </tbody>
