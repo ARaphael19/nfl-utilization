@@ -173,25 +173,20 @@ console.log("Snap columns:", Object.keys(snapData[0]));
 console.log("First snap PFR ID:", snapData[0].pfr_player_id);
 console.log("First roster PFR ID:", rosterData[0].pfr_id);
 
-const loveSnaps = snapData.filter(snap =>
-  snap.pfr_player_id === "LoveJe00" &&
-  snap.team === "ARI" &&
-  snap.game_type === "REG"
-);
+const loveGames = ["2026_01_ARI_LAC", "2026_02_SEA_ARI"];
 
-console.log(
-  "Jeremiyah Love weekly snaps:",
-  JSON.stringify(
-    loveSnaps.map(snap => ({
-      week: snap.week,
-      game: snap.game_id,
-      offense_snaps: snap.offense_snaps,
-      offense_pct: snap.offense_pct
-    })),
-    null,
-    2
-  )
-);
+loveGames.forEach(gameId => {
+  const teamSnaps = snapData.filter(snap =>
+    snap.game_id === gameId &&
+    snap.team === "ARI"
+  );
+
+  console.log(
+    gameId,
+    "Arizona team offensive snaps:",
+    Math.max(...teamSnaps.map(snap => Number(snap.offense_snaps || 0)))
+  );
+});
         
 const testPlayer = rosterData.find(player =>
   player.pfr_id &&
