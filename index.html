@@ -243,6 +243,48 @@ function parseCSV(text) {
   });
 }
 
+    function getSeasonSnapPct(player) {
+  const playerSnaps = snapData
+    .filter(snap =>
+      snap.pfr_player_id === player.pfr_id &&
+      snap.team === player.team &&
+      Number(snap.week) <= Number(selectedWeek === "season" ? 99 : selectedWeek)
+    )
+    .reduce((total, snap) => {
+      return total + Number(snap.offense_snaps || 0);
+    }, 0);
+
+  const teamGames = [
+    ...new Set(
+      snapData
+        .filter(snap =>
+          snap.team === player.team &&
+          Number(snap.week) <= Number(selectedWeek === "season" ? 99 : selectedWeek)
+        )
+        .map(snap => snap.game_id)
+    )
+  ];
+
+  let teamSnaps = 0;
+
+  teamGames.forEach(gameId => {
+    const gamePlayers = snapData.filter(snap =>
+      snap.game_id === gameId &&
+      snap.team === player.team
+    );
+
+    const maxSnaps = Math.max(
+      ...gamePlayers.map(snap => Number(snap.offense_snaps || 0))
+    );
+
+    teamSnaps += maxSnaps;
+  });
+
+  if (teamSnaps === 0) {
+    return "-";
+  }
+
+  return `${((playerSnaps / teamSnaps) * 100).toFixed(0)}%`;
     function displayTeams() {
       const selectedPosition =
         document.getElementById("position").value;
@@ -306,6 +348,7 @@ if (selectedWeek === "season") {
                 <th>Position</th>
                 <th>Week</th>
                 <th>Snap %</th>
+                <th>Season Snap %</th>
               </tr>
             </thead>
             <tbody>
