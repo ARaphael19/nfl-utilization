@@ -142,6 +142,61 @@
       displayTeams();
     }
 
+   function getSeasonSnapPct(player) {
+  const playerSnaps = snapData.filter(snap =>
+    snap.pfr_player_id === player.pfr_id &&
+    snap.team === player.team &&
+    snap.game_type === "REG" &&
+    (
+      selectedWeek === "season" ||
+      Number(snap.week) <= Number(selectedWeek)
+    )
+  );
+
+  if (playerSnaps.length === 0) {
+    return "-";
+  }
+
+  let totalPlayerSnaps = 0;
+  let totalTeamSnaps = 0;
+
+  const games = [...new Set(
+    playerSnaps.map(snap => snap.game_id)
+  )];
+
+  games.forEach(gameId => {
+    const gameSnaps = snapData.filter(snap =>
+      snap.game_id === gameId &&
+      snap.team === player.team &&
+      snap.game_type === "REG"
+    );
+
+    const teamGameSnaps = Math.max(
+      ...gameSnaps.map(snap =>
+        Number(snap.offense_snaps || 0)
+      )
+    );
+
+    const playerGameSnaps = playerSnaps.find(
+      snap => snap.game_id === gameId
+    );
+
+    if (playerGameSnaps) {
+      totalPlayerSnaps += Number(
+        playerGameSnaps.offense_snaps || 0
+      );
+    }
+
+    totalTeamSnaps += teamGameSnaps;
+  });
+
+  if (totalTeamSnaps === 0) {
+    return "-";
+  }
+
+  return `${((totalPlayerSnaps / totalTeamSnaps) * 100).toFixed(0)}%`;
+} 
+
     async function loadData() {
       try {
         const response = await fetch("data/roster_weekly_2026.csv");
