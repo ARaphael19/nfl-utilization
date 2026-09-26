@@ -384,6 +384,7 @@ if (selectedWeek === "season") {
                 <th>Position</th>
                 <th>Week</th>
                 <th>Snap %</th>
+                <th>Season Snap %</th>
               </tr>
             </thead>
             <tbody>
@@ -410,6 +411,9 @@ if (selectedWeek === "season") {
   : "-"
       )
 }</td>
+
+<td>${getSeasonSnapPct(player)}</td>
+
                 </tr>
               `).join("")}
             </tbody>
@@ -431,11 +435,3 @@ if (selectedWeek === "season") {
 
 </body>
 </html>
-
-console.log(
-  "TEST Love Season Snap:",
-  getSeasonSnapPct({
-    pfr_id: "LoveJe00",
-    team: "ARI"
-  })
-);
