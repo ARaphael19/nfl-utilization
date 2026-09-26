@@ -322,7 +322,14 @@ if (selectedWeek === "season") {
           snap.pfr_player_id === player.pfr_id &&
           snap.team === player.team &&
           Number(snap.week) === Number(player.week)
-        )?.offense_pct || "-"
+        )?.offense_pct
+  ? `${(Number(
+      snapData.find(snap =>
+        snap.pfr_player_id === player.pfr_id &&
+        snap.team === player.team &&
+        Number(snap.week) === Number(player.week)
+      ).offense_pct) * 100).toFixed(0)}%`
+  : "-"
       )
 }</td>
                 </tr>
