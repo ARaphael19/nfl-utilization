@@ -154,6 +154,7 @@
         rosterData = parseCSV(csvText);
 
         console.log("First roster row:", rosterData[0]);
+        console.log("First roster week:", rosterData[0].week);
         console.log("Roster columns:", Object.keys(rosterData[0]));
         
         document.getElementById("status").textContent =
