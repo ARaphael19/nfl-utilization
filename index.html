@@ -230,14 +230,26 @@ function parseCSV(text) {
 
       teams.forEach(team => {
 
-       const players = rosterData.filter(player =>
-        player.team === team &&
-        player.position === selectedPosition &&
-        (
-          selectedWeek === "season" ||
-          Number(player.week) === Number(selectedWeek)
-         )
-      );
+       let players = rosterData.filter(player =>
+  player.team === team &&
+  player.position === selectedPosition &&
+  (
+    selectedWeek === "season" ||
+    Number(player.week) === Number(selectedWeek)
+  )
+);
+
+if (selectedWeek === "season") {
+  const uniquePlayers = {};
+
+  players.forEach(player => {
+    const id = player.gsis_id || player.full_name;
+
+    uniquePlayers[id] = player;
+  });
+
+  players = Object.values(uniquePlayers);
+}
 
         const teamDiv = document.createElement("div");
         teamDiv.className = "team";
