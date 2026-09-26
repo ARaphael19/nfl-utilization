@@ -153,6 +153,9 @@
 
         rosterData = parseCSV(csvText);
 
+        console.log("First roster row:", rosterData[0]);
+        console.log("Roster columns:", Object.keys(rosterData[0]));
+        
         document.getElementById("status").textContent =
           `Loaded ${rosterData.length.toLocaleString()} roster records.`;
 
