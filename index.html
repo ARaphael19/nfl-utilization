@@ -179,7 +179,15 @@ const loveSnaps = snapData.filter(snap =>
   snap.game_type === "REG"
 );
 
-console.log("Jeremiyah Love snap records:", loveSnaps);
+console.log(
+  "Jeremiyah Love weekly snaps:",
+  loveSnaps.map(snap => ({
+    week: snap.week,
+    game: snap.game_id,
+    offense_snaps: snap.offense_snaps,
+    offense_pct: snap.offense_pct
+  }))
+);
         
 const testPlayer = rosterData.find(player =>
   player.pfr_id &&
