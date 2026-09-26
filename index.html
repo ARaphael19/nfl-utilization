@@ -152,16 +152,29 @@
 
         const csvText = await response.text();
 
-        rosterData = parseCSV(csvText);
+rosterData = parseCSV(csvText);
 
-        console.log("First roster row:", rosterData[0]);
-        console.log("First roster week:", rosterData[0].week);
-        console.log("Roster columns:", Object.keys(rosterData[0]));
-        
-        document.getElementById("status").textContent =
-          `Loaded ${rosterData.length.toLocaleString()} roster records.`;
+console.log("First roster row:", rosterData[0]);
+console.log("First roster week:", rosterData[0].week);
+console.log("Roster columns:", Object.keys(rosterData[0]));
 
-        displayTeams();
+const snapResponse = await fetch("data/snap_counts.csv");
+
+if (!snapResponse.ok) {
+  throw new Error("Could not load snap counts.");
+}
+
+const snapText = await snapResponse.text();
+
+snapData = parseCSV(snapText);
+
+console.log("First snap row:", snapData[0]);
+console.log("Snap columns:", Object.keys(snapData[0]));
+
+document.getElementById("status").textContent =
+  `Loaded ${rosterData.length.toLocaleString()} roster records and ${snapData.length.toLocaleString()} snap records.`;
+
+displayTeams();
 
       } catch (error) {
         console.error(error);
