@@ -41,9 +41,9 @@ jobs:
 
       - name: Download 2026 Next Gen Stats receiving data
         run: |
-          curl -L "https://github.com/nflverse/nflverse-data/releases/download/nextgen_stats/ngs_receiving.csv" \
+          curl -fL "https://github.com/nflverse/nflverse-data/releases/download/nextgen_stats/ngs_receiving.csv" \
             -o data/ngs_receiving.csv
-
+            
       - name: Save updated data
         run: |
           git config user.name "github-actions[bot]"
