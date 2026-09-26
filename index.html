@@ -142,7 +142,7 @@
       displayTeams();
     }
 
-   function getSeasonSnapPct(player) {
+function getSeasonSnapPct(player) {
   const playerSnaps = snapData.filter(snap =>
     snap.pfr_player_id === player.pfr_id &&
     snap.team === player.team &&
@@ -152,14 +152,6 @@
       Number(snap.week) <= Number(selectedWeek)
     )
   );
-
-     console.log(
-  "Jeremiyah Love Season Snap %:",
-  getSeasonSnapPct({
-    pfr_id: "LoveJe00",
-    team: "ARI"
-  })
-);
 
   if (playerSnaps.length === 0) {
     return "-";
@@ -203,7 +195,7 @@
   }
 
   return `${((totalPlayerSnaps / totalTeamSnaps) * 100).toFixed(0)}%`;
-} 
+}
 
     async function loadData() {
       try {
