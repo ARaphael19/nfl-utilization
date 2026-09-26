@@ -134,6 +134,13 @@
 
     let rosterData = [];
 
+    let selectedWeek = "season";
+
+    function updateWeek() {
+      selectedWeek = document.getElementById("week").value;
+      displayTeams();
+    }
+
     async function loadData() {
       try {
         const response = await fetch("data/roster_weekly_2026.csv");
