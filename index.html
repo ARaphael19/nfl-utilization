@@ -286,7 +286,7 @@ if (selectedWeek === "season") {
                 <tr>
                   <td>${player.full_name}</td>
                   <td>${player.position}</td>
-                  <td>${player.week}</td>
+                  <td>${selectedWeek === "season" ? "Season" : player.week}</td>
                   <td>-</td>
                 </tr>
               `).join("")}
