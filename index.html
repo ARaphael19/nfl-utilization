@@ -187,7 +187,10 @@
     function displayTeams() {
       const selectedPosition =
         document.getElementById("position").value;
-
+      
+      console.log("Selected week:", selectedWeek);
+      console.log("Example weeks:", rosterData.slice(0, 20).map(p => p.week));
+      
       const container =
         document.getElementById("teams");
 
