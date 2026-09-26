@@ -181,12 +181,16 @@ const loveSnaps = snapData.filter(snap =>
 
 console.log(
   "Jeremiyah Love weekly snaps:",
-  loveSnaps.map(snap => ({
-    week: snap.week,
-    game: snap.game_id,
-    offense_snaps: snap.offense_snaps,
-    offense_pct: snap.offense_pct
-  }))
+  JSON.stringify(
+    loveSnaps.map(snap => ({
+      week: snap.week,
+      game: snap.game_id,
+      offense_snaps: snap.offense_snaps,
+      offense_pct: snap.offense_pct
+    })),
+    null,
+    2
+  )
 );
         
 const testPlayer = rosterData.find(player =>
