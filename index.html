@@ -195,10 +195,14 @@
 
       teams.forEach(team => {
 
-        const players = rosterData.filter(player =>
-          player.team === team &&
-          player.position === selectedPosition
-        );
+       const players = rosterData.filter(player =>
+        player.team === team &&
+        player.position === selectedPosition &&
+        (
+          selectedWeek === "season" ||
+          Number(player.week) === Number(selectedWeek)
+         )
+      );
 
         const teamDiv = document.createElement("div");
         teamDiv.className = "team";
