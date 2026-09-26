@@ -40,6 +40,7 @@
       border-radius: 6px;
       border: 1px solid #bbb;
       background: white;
+      margin-right: 10px;
     }
 
     #status {
@@ -66,8 +67,13 @@
       font-weight: bold;
     }
 
+    .table-wrapper {
+      overflow-x: auto;
+    }
+
     table {
       width: 100%;
+      min-width: 1200px;
       border-collapse: collapse;
     }
 
@@ -75,11 +81,12 @@
       padding: 10px 12px;
       text-align: left;
       border-bottom: 1px solid #eee;
+      white-space: nowrap;
     }
 
     th {
       background: #f9fafb;
-      font-size: 13px;
+      font-size: 12px;
       text-transform: uppercase;
       color: #555;
     }
@@ -92,6 +99,10 @@
       padding: 16px;
       color: #777;
     }
+
+    .stat {
+      font-variant-numeric: tabular-nums;
+    }
   </style>
 </head>
 
@@ -103,6 +114,7 @@
   </header>
 
   <div class="controls">
+
     <label for="position"><strong>Position:</strong></label>
 
     <select id="position">
@@ -120,11 +132,13 @@
     </select>
 
     <div id="status">Loading NFL data...</div>
+
   </div>
 
   <div id="teams" class="teams"></div>
 
   <script>
+
     const teams = [
       "ARI", "ATL", "BAL", "BUF", "CAR", "CHI", "CIN", "CLE",
       "DAL", "DEN", "DET", "GB", "HOU", "IND", "JAX", "KC",
@@ -134,295 +148,1054 @@
 
     let rosterData = [];
     let snapData = [];
+    let statsData = [];
 
     let selectedWeek = "season";
+
+
+    /* =========================
+       WEEK SELECTION
+       ========================= */
 
     function updateWeek() {
       selectedWeek = document.getElementById("week").value;
       displayTeams();
     }
 
-function getSeasonSnapPct(player) {
-  const playerSnaps = snapData.filter(snap =>
-    snap.pfr_player_id === player.pfr_id &&
-    snap.team === player.team &&
-    snap.game_type === "REG" &&
-    (
-      selectedWeek === "season" ||
-      Number(snap.week) <= Number(selectedWeek)
-    )
-  );
 
-  if (playerSnaps.length === 0) {
-    return "-";
-  }
+    /* =========================
+       BASIC NUMBER HELPERS
+       ========================= */
 
-  let totalPlayerSnaps = 0;
-  let totalTeamSnaps = 0;
+    function num(value) {
+      const n = Number(value);
+      return Number.isFinite(n) ? n : 0;
+    }
 
-  const games = [...new Set(
-    playerSnaps.map(snap => snap.game_id)
-  )];
 
-  games.forEach(gameId => {
-    const gameSnaps = snapData.filter(snap =>
-      snap.game_id === gameId &&
-      snap.team === player.team &&
-      snap.game_type === "REG"
-    );
+    function formatPct(value) {
+      if (value === null || value === undefined || !Number.isFinite(value)) {
+        return "-";
+      }
 
-    const teamGameSnaps = Math.max(
-      ...gameSnaps.map(snap =>
-        Number(snap.offense_snaps || 0)
-      )
-    );
+      return `${(value * 100).toFixed(0)}%`;
+    }
 
-    const playerGameSnaps = playerSnaps.find(
-      snap => snap.game_id === gameId
-    );
 
-    if (playerGameSnaps) {
-      totalPlayerSnaps += Number(
-        playerGameSnaps.offense_snaps || 0
+    function formatYPC(value) {
+      if (value === null || value === undefined || !Number.isFinite(value)) {
+        return "-";
+      }
+
+      return value.toFixed(1);
+    }
+
+
+    /* =========================
+       SNAP COUNT CALCULATIONS
+       ========================= */
+
+    function getPlayerSnapRows(player) {
+
+      return snapData.filter(snap =>
+        snap.pfr_player_id === player.pfr_id &&
+        snap.team === player.team &&
+        snap.game_type === "REG" &&
+        (
+          selectedWeek === "season" ||
+          Number(snap.week) <= Number(selectedWeek)
+        )
+      );
+
+    }
+
+
+    function getWeeklySnapPct(player) {
+
+      if (selectedWeek === "season") {
+        return "-";
+      }
+
+      const snap = snapData.find(s =>
+        s.pfr_player_id === player.pfr_id &&
+        s.team === player.team &&
+        s.game_type === "REG" &&
+        Number(s.week) === Number(selectedWeek)
+      );
+
+      if (!snap || snap.offense_pct === "") {
+        return "-";
+      }
+
+      return formatPct(num(snap.offense_pct));
+    }
+
+
+    function getSeasonSnapPct(player) {
+
+      const playerSnaps = getPlayerSnapRows(player);
+
+      if (playerSnaps.length === 0) {
+        return "-";
+      }
+
+      let totalPlayerSnaps = 0;
+      let totalTeamSnaps = 0;
+
+      const games = [
+        ...new Set(playerSnaps.map(snap => snap.game_id))
+      ];
+
+      games.forEach(gameId => {
+
+        const gameSnaps = snapData.filter(snap =>
+          snap.game_id === gameId &&
+          snap.team === player.team &&
+          snap.game_type === "REG"
+        );
+
+        if (gameSnaps.length === 0) {
+          return;
+        }
+
+        const teamGameSnaps = Math.max(
+          ...gameSnaps.map(snap =>
+            num(snap.offense_snaps)
+          )
+        );
+
+        const playerGameSnap = playerSnaps.find(
+          snap => snap.game_id === gameId
+        );
+
+        if (playerGameSnap) {
+          totalPlayerSnaps += num(
+            playerGameSnap.offense_snaps
+          );
+        }
+
+        totalTeamSnaps += teamGameSnaps;
+      });
+
+      if (totalTeamSnaps === 0) {
+        return "-";
+      }
+
+      return `${(
+        (totalPlayerSnaps / totalTeamSnaps) * 100
+      ).toFixed(0)}%`;
+    }
+
+
+    /* =========================
+       PLAYER STAT HELPERS
+       ========================= */
+
+    function getPlayerStatRows(player) {
+
+      return statsData.filter(stat =>
+        stat.season_type === "REG" &&
+        stat.team === player.team &&
+        stat.player_id === player.gsis_id &&
+        (
+          selectedWeek === "season" ||
+          Number(stat.week) <= Number(selectedWeek)
+        )
+      );
+
+    }
+
+
+    function getWeeklyPlayerStat(player) {
+
+      if (selectedWeek === "season") {
+        return null;
+      }
+
+      return statsData.find(stat =>
+        stat.season_type === "REG" &&
+        stat.team === player.team &&
+        stat.player_id === player.gsis_id &&
+        Number(stat.week) === Number(selectedWeek)
+      ) || null;
+
+    }
+
+
+    /* =========================
+       TEAM STAT HELPERS
+       ========================= */
+
+    function getTeamStatRows(team) {
+
+      return statsData.filter(stat =>
+        stat.season_type === "REG" &&
+        stat.team === team &&
+        (
+          selectedWeek === "season" ||
+          Number(stat.week) <= Number(selectedWeek)
+        )
+      );
+
+    }
+
+
+    function getTeamWeekStats(team, week) {
+
+      return statsData.filter(stat =>
+        stat.season_type === "REG" &&
+        stat.team === team &&
+        Number(stat.week) === Number(week)
+      );
+
+    }
+
+
+    /* =========================
+       TARGET SHARE
+       ========================= */
+
+    function getTargetShare(player) {
+
+      const weeklyStats = getWeeklyPlayerStat(player);
+
+      if (selectedWeek === "season") {
+
+        const playerRows = getPlayerStatRows(player);
+
+        if (playerRows.length === 0) {
+          return "-";
+        }
+
+        let playerTargets = 0;
+        let teamTargets = 0;
+
+        const weeks = [
+          ...new Set(
+            playerRows.map(stat => Number(stat.week))
+          )
+        ];
+
+        weeks.forEach(week => {
+
+          const teamRows = getTeamWeekStats(
+            player.team,
+            week
+          );
+
+          const playerRow = teamRows.find(stat =>
+            stat.player_id === player.gsis_id
+          );
+
+          if (!playerRow) {
+            return;
+          }
+
+          playerTargets += num(playerRow.targets);
+
+          teamTargets += teamRows.reduce(
+            (total, stat) =>
+              total + num(stat.targets),
+            0
+          );
+
+        });
+
+        if (teamTargets === 0) {
+          return "-";
+        }
+
+        return formatPct(
+          playerTargets / teamTargets
+        );
+      }
+
+      if (!weeklyStats) {
+        return "-";
+      }
+
+      const teamRows = getTeamWeekStats(
+        player.team,
+        selectedWeek
+      );
+
+      const teamTargets = teamRows.reduce(
+        (total, stat) =>
+          total + num(stat.targets),
+        0
+      );
+
+      const playerTargets = num(
+        weeklyStats.targets
+      );
+
+      if (teamTargets === 0) {
+        return "-";
+      }
+
+      return formatPct(
+        playerTargets / teamTargets
       );
     }
 
-    totalTeamSnaps += teamGameSnaps;
-  });
 
-  if (totalTeamSnaps === 0) {
-    return "-";
-  }
+    /* =========================
+       SEASON TARGET SHARE
+       ========================= */
 
-  return `${((totalPlayerSnaps / totalTeamSnaps) * 100).toFixed(0)}%`;
-}
+    function getSeasonTargetShare(player) {
+
+      const playerRows = getPlayerStatRows(player);
+
+      if (playerRows.length === 0) {
+        return "-";
+      }
+
+      let playerTargets = 0;
+      let teamTargets = 0;
+
+      const weeks = [
+        ...new Set(
+          playerRows.map(stat => Number(stat.week))
+        )
+      ];
+
+      weeks.forEach(week => {
+
+        const teamRows = getTeamWeekStats(
+          player.team,
+          week
+        );
+
+        const playerRow = teamRows.find(stat =>
+          stat.player_id === player.gsis_id
+        );
+
+        if (!playerRow) {
+          return;
+        }
+
+        playerTargets += num(playerRow.targets);
+
+        teamTargets += teamRows.reduce(
+          (total, stat) =>
+            total + num(stat.targets),
+          0
+        );
+
+      });
+
+      if (teamTargets === 0) {
+        return "-";
+      }
+
+      return formatPct(
+        playerTargets / teamTargets
+      );
+    }
+
+
+    /* =========================
+       RUSH ATTEMPT SHARE
+       ========================= */
+
+    function getRushAttemptShare(player) {
+
+      if (selectedWeek === "season") {
+        return getSeasonRushAttemptShare(player);
+      }
+
+      const weeklyStats = getWeeklyPlayerStat(player);
+
+      if (!weeklyStats) {
+        return "-";
+      }
+
+      const teamRows = getTeamWeekStats(
+        player.team,
+        selectedWeek
+      );
+
+      const teamCarries = teamRows.reduce(
+        (total, stat) =>
+          total + num(stat.carries),
+        0
+      );
+
+      const playerCarries = num(
+        weeklyStats.carries
+      );
+
+      if (teamCarries === 0) {
+        return "-";
+      }
+
+      return formatPct(
+        playerCarries / teamCarries
+      );
+    }
+
+
+    function getSeasonRushAttemptShare(player) {
+
+      const playerRows = getPlayerStatRows(player);
+
+      if (playerRows.length === 0) {
+        return "-";
+      }
+
+      let playerCarries = 0;
+      let teamCarries = 0;
+
+      const weeks = [
+        ...new Set(
+          playerRows.map(stat => Number(stat.week))
+        )
+      ];
+
+      weeks.forEach(week => {
+
+        const teamRows = getTeamWeekStats(
+          player.team,
+          week
+        );
+
+        const playerRow = teamRows.find(stat =>
+          stat.player_id === player.gsis_id
+        );
+
+        if (!playerRow) {
+          return;
+        }
+
+        playerCarries += num(
+          playerRow.carries
+        );
+
+        teamCarries += teamRows.reduce(
+          (total, stat) =>
+            total + num(stat.carries),
+          0
+        );
+
+      });
+
+      if (teamCarries === 0) {
+        return "-";
+      }
+
+      return formatPct(
+        playerCarries / teamCarries
+      );
+    }
+
+
+    /* =========================
+       TOUCH SHARE
+       ========================= */
+
+    function getTouchShare(player) {
+
+      if (selectedWeek === "season") {
+        return getSeasonTouchShare(player);
+      }
+
+      const weeklyStats = getWeeklyPlayerStat(player);
+
+      if (!weeklyStats) {
+        return "-";
+      }
+
+      const teamRows = getTeamWeekStats(
+        player.team,
+        selectedWeek
+      );
+
+      const teamTouches = teamRows.reduce(
+        (total, stat) =>
+          total +
+          num(stat.carries) +
+          num(stat.receptions),
+        0
+      );
+
+      const playerTouches =
+        num(weeklyStats.carries) +
+        num(weeklyStats.receptions);
+
+      if (teamTouches === 0) {
+        return "-";
+      }
+
+      return formatPct(
+        playerTouches / teamTouches
+      );
+    }
+
+
+    function getSeasonTouchShare(player) {
+
+      const playerRows = getPlayerStatRows(player);
+
+      if (playerRows.length === 0) {
+        return "-";
+      }
+
+      let playerTouches = 0;
+      let teamTouches = 0;
+
+      const weeks = [
+        ...new Set(
+          playerRows.map(stat => Number(stat.week))
+        )
+      ];
+
+      weeks.forEach(week => {
+
+        const teamRows = getTeamWeekStats(
+          player.team,
+          week
+        );
+
+        const playerRow = teamRows.find(stat =>
+          stat.player_id === player.gsis_id
+        );
+
+        if (!playerRow) {
+          return;
+        }
+
+        playerTouches +=
+          num(playerRow.carries) +
+          num(playerRow.receptions);
+
+        teamTouches += teamRows.reduce(
+          (total, stat) =>
+            total +
+            num(stat.carries) +
+            num(stat.receptions),
+          0
+        );
+
+      });
+
+      if (teamTouches === 0) {
+        return "-";
+      }
+
+      return formatPct(
+        playerTouches / teamTouches
+      );
+    }
+
+
+    /* =========================
+       YARDS PER CARRY
+       ========================= */
+
+    function getYPC(player) {
+
+      const rows = getPlayerStatRows(player);
+
+      if (rows.length === 0) {
+        return "-";
+      }
+
+      const carries = rows.reduce(
+        (total, stat) =>
+          total + num(stat.carries),
+        0
+      );
+
+      const rushingYards = rows.reduce(
+        (total, stat) =>
+          total + num(stat.rushing_yards),
+        0
+      );
+
+      if (carries === 0) {
+        return "-";
+      }
+
+      return formatYPC(
+        rushingYards / carries
+      );
+    }
+
+
+    /* =========================
+       LOAD DATA
+       ========================= */
 
     async function loadData() {
-      try {
-        const response = await fetch("data/roster_weekly_2026.csv");
 
-        if (!response.ok) {
-          throw new Error("Could not load roster data.");
+      try {
+
+        const rosterResponse =
+          await fetch(
+            "data/roster_weekly_2026.csv"
+          );
+
+        if (!rosterResponse.ok) {
+          throw new Error(
+            "Could not load roster data."
+          );
         }
 
-        const csvText = await response.text();
+        const rosterText =
+          await rosterResponse.text();
 
-rosterData = parseCSV(csvText);
+        rosterData = parseCSV(rosterText);
 
-console.log("First roster row:", rosterData[0]);
-console.log("First roster week:", rosterData[0].week);
-console.log("Roster columns:", Object.keys(rosterData[0]));
 
-const snapResponse = await fetch("data/snap_counts.csv");
+        const snapResponse =
+          await fetch(
+            "data/snap_counts.csv"
+          );
 
-if (!snapResponse.ok) {
-  throw new Error("Could not load snap counts.");
-}
+        if (!snapResponse.ok) {
+          throw new Error(
+            "Could not load snap counts."
+          );
+        }
 
-const snapText = await snapResponse.text();
+        const snapText =
+          await snapResponse.text();
 
-snapData = parseCSV(snapText);
+        snapData = parseCSV(snapText);
 
-console.log("First snap row:", snapData[0]);
-console.log("Snap columns:", Object.keys(snapData[0]));
-console.log("First snap PFR ID:", snapData[0].pfr_player_id);
-console.log("First roster PFR ID:", rosterData[0].pfr_id);
 
-const loveGames = ["2026_01_ARI_LAC", "2026_02_SEA_ARI"];
+        const statsResponse =
+          await fetch(
+            "data/player_stats.csv"
+          );
 
-loveGames.forEach(gameId => {
-  const teamSnaps = snapData.filter(snap =>
-    snap.game_id === gameId &&
-    snap.team === "ARI"
-  );
+        if (!statsResponse.ok) {
+          throw new Error(
+            "Could not load player stats."
+          );
+        }
 
-  console.log(
-    gameId,
-    "Arizona team offensive snaps:",
-    Math.max(...teamSnaps.map(snap => Number(snap.offense_snaps || 0)))
-  );
-});
-        
-const testPlayer = rosterData.find(player =>
-  player.pfr_id &&
-  snapData.some(snap =>
-    snap.pfr_player_id === player.pfr_id &&
-    snap.team === player.team &&
-    Number(snap.week) === Number(player.week)
-  )
-);
+        const statsText =
+          await statsResponse.text();
 
-console.log("Matching player test:", testPlayer);        
+        statsData = parseCSV(statsText);
 
-document.getElementById("status").textContent =
-  `Loaded ${rosterData.length.toLocaleString()} roster records and ${snapData.length.toLocaleString()} snap records.`;
 
-displayTeams();
+        console.log(
+          "Roster records:",
+          rosterData.length
+        );
+
+        console.log(
+          "Snap records:",
+          snapData.length
+        );
+
+        console.log(
+          "Player stat records:",
+          statsData.length
+        );
+
+        console.log(
+          "Player stat columns:",
+          Object.keys(statsData[0] || {})
+        );
+
+
+        document.getElementById(
+          "status"
+        ).textContent =
+          `Loaded ${
+            rosterData.length.toLocaleString()
+          } roster records, ${
+            snapData.length.toLocaleString()
+          } snap records, and ${
+            statsData.length.toLocaleString()
+          } player stat records.`;
+
+
+        displayTeams();
 
       } catch (error) {
+
         console.error(error);
 
-        document.getElementById("status").textContent =
+        document.getElementById(
+          "status"
+        ).textContent =
           "There was a problem loading the NFL data.";
       }
+
     }
 
-function parseCSV(text) {
-  const lines = text.trim().split(/\r?\n/);
 
-  function parseLine(line) {
-    const values = [];
-    let current = "";
-    let insideQuotes = false;
+    /* =========================
+       CSV PARSER
+       ========================= */
 
-    for (let i = 0; i < line.length; i++) {
-      const char = line[i];
+    function parseCSV(text) {
 
-      if (char === '"') {
-        if (insideQuotes && line[i + 1] === '"') {
-          current += '"';
-          i++;
-        } else {
-          insideQuotes = !insideQuotes;
+      const lines =
+        text.trim().split(/\r?\n/);
+
+
+      function parseLine(line) {
+
+        const values = [];
+
+        let current = "";
+
+        let insideQuotes = false;
+
+
+        for (
+          let i = 0;
+          i < line.length;
+          i++
+        ) {
+
+          const char = line[i];
+
+
+          if (char === '"') {
+
+            if (
+              insideQuotes &&
+              line[i + 1] === '"'
+            ) {
+
+              current += '"';
+
+              i++;
+
+            } else {
+
+              insideQuotes =
+                !insideQuotes;
+            }
+
+          } else if (
+            char === "," &&
+            !insideQuotes
+          ) {
+
+            values.push(current);
+
+            current = "";
+
+          } else {
+
+            current += char;
+          }
         }
-      } else if (char === "," && !insideQuotes) {
+
+
         values.push(current);
-        current = "";
-      } else {
-        current += char;
+
+        return values;
       }
+
+
+      const headers =
+        parseLine(lines[0]);
+
+
+      return lines.slice(1).map(line => {
+
+        const values =
+          parseLine(line);
+
+        const row = {};
+
+
+        headers.forEach(
+          (header, index) => {
+
+            row[header] =
+              values[index] || "";
+          }
+        );
+
+
+        return row;
+      });
+
     }
 
-    values.push(current);
 
-    return values;
-  }
-
-  const headers = parseLine(lines[0]);
-
-  return lines.slice(1).map(line => {
-    const values = parseLine(line);
-
-    const row = {};
-
-    headers.forEach((header, index) => {
-      row[header] = values[index] || "";
-    });
-
-    return row;
-  });
-}
+    /* =========================
+       DISPLAY TEAMS
+       ========================= */
 
     function displayTeams() {
+
       const selectedPosition =
-        document.getElementById("position").value;
-      
-      console.log("Selected week:", selectedWeek);
-      console.log("Example weeks:", rosterData.slice(0, 20).map(p => p.week).join(", "));
-      
+        document.getElementById(
+          "position"
+        ).value;
+
+
       const container =
-        document.getElementById("teams");
+        document.getElementById(
+          "teams"
+        );
+
 
       container.innerHTML = "";
 
+
       teams.forEach(team => {
 
-       let players = rosterData.filter(player =>
-  player.team === team &&
-  player.position === selectedPosition &&
-  (
-    selectedWeek === "season" ||
-    Number(player.week) === Number(selectedWeek)
-  )
-);
+        let players =
+          rosterData.filter(player =>
 
-if (selectedWeek === "season") {
-  const uniquePlayers = {};
+            player.team === team &&
 
-  players.forEach(player => {
-    const id = player.gsis_id || player.full_name;
+            player.position ===
+              selectedPosition &&
 
-    uniquePlayers[id] = player;
-  });
+            (
+              selectedWeek === "season" ||
 
-  players = Object.values(uniquePlayers);
-}
+              Number(player.week) ===
+                Number(selectedWeek)
+            )
 
-        const teamDiv = document.createElement("div");
-        teamDiv.className = "team";
+          );
 
-        const header = document.createElement("div");
-        header.className = "team-header";
-        header.textContent = team;
 
-        teamDiv.appendChild(header);
+        /* Remove duplicate season players */
 
-        if (players.length === 0) {
+        if (
+          selectedWeek === "season"
+        ) {
 
-          const empty = document.createElement("div");
-          empty.className = "empty";
-          empty.textContent = "No players found.";
+          const uniquePlayers = {};
 
-          teamDiv.appendChild(empty);
+
+          players.forEach(player => {
+
+            const id =
+              player.gsis_id ||
+              player.full_name;
+
+
+            uniquePlayers[id] =
+              player;
+          });
+
+
+          players =
+            Object.values(
+              uniquePlayers
+            );
+        }
+
+
+        const teamDiv =
+          document.createElement(
+            "div"
+          );
+
+        teamDiv.className =
+          "team";
+
+
+        const header =
+          document.createElement(
+            "div"
+          );
+
+        header.className =
+          "team-header";
+
+        header.textContent =
+          team;
+
+
+        teamDiv.appendChild(
+          header
+        );
+
+
+        if (
+          players.length === 0
+        ) {
+
+          const empty =
+            document.createElement(
+              "div"
+            );
+
+          empty.className =
+            "empty";
+
+          empty.textContent =
+            "No players found.";
+
+          teamDiv.appendChild(
+            empty
+          );
 
         } else {
 
-          const table = document.createElement("table");
+          const table =
+            document.createElement(
+              "table"
+            );
+
 
           table.innerHTML = `
-            <thead>
-              <tr>
-                <th>Player Name</th>
-                <th>Position</th>
-                <th>Week</th>
-                <th>Snap %</th>
-                <th>Season Snap %</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${players.map(player => `
-                <tr>
-                  <td>${player.full_name}</td>
-                  <td>${player.position}</td>
-                  <td>${selectedWeek === "season" ? "Season" : player.week}</td>
-                  <td>${
-  selectedWeek === "season"
-    ? "-"
-    : (
-        snapData.find(snap =>
-          snap.pfr_player_id === player.pfr_id &&
-          snap.team === player.team &&
-          Number(snap.week) === Number(player.week)
-        )?.offense_pct
-  ? `${(Number(
-      snapData.find(snap =>
-        snap.pfr_player_id === player.pfr_id &&
-        snap.team === player.team &&
-        Number(snap.week) === Number(player.week)
-      ).offense_pct) * 100).toFixed(0)}%`
-  : "-"
-      )
-}</td>
 
-<td>${getSeasonSnapPct(player)}</td>
+            <thead>
+
+              <tr>
+
+                <th>Player Name</th>
+
+                <th>Position</th>
+
+                <th>Week</th>
+
+                <th>Snap %</th>
+
+                <th>Season Snap %</th>
+
+                <th>Target Share</th>
+
+                <th>Season Target Share</th>
+
+                <th>Rush Attempt Share</th>
+
+                <th>Season Rush Attempt Share</th>
+
+                <th>Touch Share</th>
+
+                <th>Season Touch Share</th>
+
+                <th>Yards / Carry</th>
+
+              </tr>
+
+            </thead>
+
+
+            <tbody>
+
+              ${players.map(player => `
+
+                <tr>
+
+                  <td>
+                    ${player.full_name}
+                  </td>
+
+                  <td>
+                    ${player.position}
+                  </td>
+
+                  <td>
+                    ${
+                      selectedWeek === "season"
+                        ? "Season"
+                        : player.week
+                    }
+                  </td>
+
+                  <td class="stat">
+                    ${getWeeklySnapPct(player)}
+                  </td>
+
+                  <td class="stat">
+                    ${getSeasonSnapPct(player)}
+                  </td>
+
+                  <td class="stat">
+                    ${getTargetShare(player)}
+                  </td>
+
+                  <td class="stat">
+                    ${getSeasonTargetShare(player)}
+                  </td>
+
+                  <td class="stat">
+                    ${getRushAttemptShare(player)}
+                  </td>
+
+                  <td class="stat">
+                    ${getSeasonRushAttemptShare(player)}
+                  </td>
+
+                  <td class="stat">
+                    ${getTouchShare(player)}
+                  </td>
+
+                  <td class="stat">
+                    ${getSeasonTouchShare(player)}
+                  </td>
+
+                  <td class="stat">
+                    ${getYPC(player)}
+                  </td>
 
                 </tr>
+
               `).join("")}
+
             </tbody>
+
           `;
 
-          teamDiv.appendChild(table);
+
+          const wrapper =
+            document.createElement(
+              "div"
+            );
+
+          wrapper.className =
+            "table-wrapper";
+
+
+          wrapper.appendChild(
+            table
+          );
+
+
+          teamDiv.appendChild(
+            wrapper
+          );
+
         }
 
-        container.appendChild(teamDiv);
+
+        container.appendChild(
+          teamDiv
+        );
+
       });
+
     }
+
+
+    /* =========================
+       POSITION CHANGE
+       ========================= */
 
     document
       .getElementById("position")
-      .addEventListener("change", displayTeams);
+      .addEventListener(
+        "change",
+        displayTeams
+      );
+
+
+    /* =========================
+       START
+       ========================= */
 
     loadData();
+
   </script>
 
 </body>
