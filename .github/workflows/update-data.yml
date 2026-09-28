@@ -49,40 +49,48 @@ jobs:
 
           Rscript -e '
           x <- readRDS("/tmp/test_game.rds")
+          y <- x$data
 
           cat("========================================\n")
           cat("RAW PBP TEST\n")
           cat("========================================\n\n")
 
-          cat("OBJECT TYPE:\n")
+          cat("TOP LEVEL OBJECT:\n")
           print(class(x))
-
-          cat("\nCOLUMN NAMES:\n")
           print(names(x))
 
-          cat("\nNUMBER OF PLAYS:\n")
-          print(nrow(x))
+          cat("\nDATA OBJECT TYPE:\n")
+          print(class(y))
 
-          cat("\nLOOKING FOR PLAYER/PARTICIPATION FIELDS:\n")
-          possible <- names(x)[grepl(
-            "player|offense|defense|participant|route|dropback",
-            names(x),
+          cat("\nDATA OBJECT NAMES:\n")
+          print(names(y))
+
+          cat("\nNUMBER OF PLAYS:\n")
+          print(nrow(y))
+
+          cat("\nFIELDS RELATED TO PLAYERS/PARTICIPATION:\n")
+
+          possible <- names(y)[grepl(
+            "player|offense|defense|participant|route|dropback|passer|receiver",
+            names(y),
             ignore.case = TRUE
           )]
 
           print(possible)
 
           cat("\nQB DROPBACK FIELD:\n")
-          if ("qb_dropback" %in% names(x)) {
-            print(table(x$qb_dropback, useNA = "ifany"))
+
+          if ("qb_dropback" %in% names(y)) {
+            print(table(y$qb_dropback, useNA = "ifany"))
           } else {
             cat("qb_dropback was NOT found.\n")
           }
 
-          cat("\nPOSSIBLE PARTICIPATION DATA:\n")
+          cat("\nPOSSIBLE PLAYER/PARTICIPATION FIELDS:\n")
+
           for (field in possible) {
             cat("\n--- ", field, " ---\n", sep = "")
-            print(head(x[[field]], 3))
+            print(head(y[[field]], 5))
           }
 
           cat("\n========================================\n")
