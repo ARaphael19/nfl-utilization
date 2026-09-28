@@ -42,16 +42,26 @@ jobs:
       - name: Install R
         uses: r-lib/actions/setup-r@v2
 
-      - name: Inspect parsed 2026 play-by-play
+      - name: Test 2026 participation data
         run: |
-          curl -L "https://github.com/nflverse/nflverse-data/releases/download/pbp/play_by_play_2026.rds" \
-            -o /tmp/pbp_2026.rds
+          echo "Testing 2026 participation data..."
+
+          HTTP_CODE=$(curl -L -s -o /tmp/participation_2026.rds \
+            -w "%{http_code}" \
+            "https://github.com/nflverse/nflverse-data/releases/download/pbp_participation/pbp_participation_2026.rds")
+
+          echo "HTTP STATUS: $HTTP_CODE"
+
+          if [ "$HTTP_CODE" != "200" ]; then
+            echo "2026 participation file is not currently available."
+            exit 0
+          fi
 
           Rscript -e '
-          x <- readRDS("/tmp/pbp_2026.rds")
+          x <- readRDS("/tmp/participation_2026.rds")
 
           cat("========================================\n")
-          cat("PARSED 2026 PBP TEST\n")
+          cat("2026 PARTICIPATION TEST\n")
           cat("========================================\n\n")
 
           cat("OBJECT TYPE:\n")
@@ -63,40 +73,21 @@ jobs:
           cat("\nNUMBER OF COLUMNS:\n")
           print(ncol(x))
 
-          cat("\nPLAYER/DROPBACK RELATED COLUMNS:\n")
+          cat("\nCOLUMNS:\n")
+          print(names(x))
+
+          cat("\nIMPORTANT PARTICIPATION COLUMNS:\n")
 
           possible <- names(x)[grepl(
-            "player|offense|defense|participant|route|dropback|passer|receiver|posteam",
+            "offense_players|offense_names|offense_positions|players_on_play|route|n_offense",
             names(x),
             ignore.case = TRUE
           )]
 
           print(possible)
 
-          cat("\nQB DROPBACK:\n")
-
-          if ("qb_dropback" %in% names(x)) {
-            print(table(x$qb_dropback, useNA = "ifany"))
-          } else {
-            cat("qb_dropback was NOT found.\n")
-          }
-
-          cat("\nFIRST FEW DROPBACK PLAYS:\n")
-
-          if ("qb_dropback" %in% names(x)) {
-            dropbacks <- x[x$qb_dropback == 1, ]
-
-            print(
-              dropbacks[
-                1:min(5, nrow(dropbacks)),
-                possible,
-                drop = FALSE
-              ]
-            )
-          }
-
           cat("\n========================================\n")
-          cat("END PARSED PBP TEST\n")
+          cat("END PARTICIPATION TEST\n")
           cat("========================================\n")
           '
 
