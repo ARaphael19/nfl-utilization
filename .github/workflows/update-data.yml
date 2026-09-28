@@ -39,6 +39,54 @@ jobs:
           curl -L "https://github.com/nflverse/nflverse-data/releases/download/snap_counts/snap_counts_2026.csv" \
             -o data/snap_counts.csv
 
+      - name: Inspect raw 2026 play-by-play
+        run: |
+          curl -L "https://github.com/nflverse/nflverse-pbp/releases/download/raw_pbp_2026/2026_01_SF_LA.rds" \
+            -o /tmp/test_game.rds
+
+          Rscript -e '
+          x <- readRDS("/tmp/test_game.rds")
+
+          cat("========================================\n")
+          cat("RAW PBP TEST\n")
+          cat("========================================\n\n")
+
+          cat("OBJECT TYPE:\n")
+          print(class(x))
+
+          cat("\nCOLUMN NAMES:\n")
+          print(names(x))
+
+          cat("\nNUMBER OF PLAYS:\n")
+          print(nrow(x))
+
+          cat("\nLOOKING FOR PLAYER/PARTICIPATION FIELDS:\n")
+          possible <- names(x)[grepl(
+            "player|offense|defense|participant|route|dropback",
+            names(x),
+            ignore.case = TRUE
+          )]
+
+          print(possible)
+
+          cat("\nQB DROPBACK FIELD:\n")
+          if ("qb_dropback" %in% names(x)) {
+            print(table(x$qb_dropback, useNA = "ifany"))
+          } else {
+            cat("qb_dropback was NOT found.\n")
+          }
+
+          cat("\nPOSSIBLE PARTICIPATION DATA:\n")
+          for (field in possible) {
+            cat("\n--- ", field, " ---\n", sep = "")
+            print(head(x[[field]], 3))
+          }
+
+          cat("\n========================================\n")
+          cat("END RAW PBP TEST\n")
+          cat("========================================\n")
+          '
+
       - name: Save updated data
         run: |
           git config user.name "github-actions[bot]"
