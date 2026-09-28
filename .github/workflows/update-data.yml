@@ -69,7 +69,13 @@ jobs:
           print(names(z))
 
           cat("\nVIEWER STRUCTURE:\n")
-          str(z, max.level = 2)
+          str(z, max.level = 3)
+
+          cat("\n========================================\n")
+          cat("VIEWER CONTENT:\n")
+          cat("========================================\n")
+
+          print(z)
 
           cat("\n========================================\n")
           cat("SEARCHING VIEWER FOR PLAYER/PARTICIPATION DATA\n")
