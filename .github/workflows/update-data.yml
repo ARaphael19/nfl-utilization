@@ -42,59 +42,61 @@ jobs:
       - name: Install R
         uses: r-lib/actions/setup-r@v2
 
-      - name: Inspect raw 2026 play-by-play
+      - name: Inspect parsed 2026 play-by-play
         run: |
-          curl -L "https://github.com/nflverse/nflverse-pbp/releases/download/raw_pbp_2026/2026_01_SF_LA.rds" \
-            -o /tmp/test_game.rds
+          curl -L "https://github.com/nflverse/nflverse-data/releases/download/pbp/play_by_play_2026.rds" \
+            -o /tmp/pbp_2026.rds
 
           Rscript -e '
-          x <- readRDS("/tmp/test_game.rds")
-          y <- x$data
+          x <- readRDS("/tmp/pbp_2026.rds")
 
           cat("========================================\n")
-          cat("RAW PBP TEST\n")
+          cat("PARSED 2026 PBP TEST\n")
           cat("========================================\n\n")
 
-          cat("TOP LEVEL OBJECT:\n")
+          cat("OBJECT TYPE:\n")
           print(class(x))
-          print(names(x))
-
-          cat("\nDATA OBJECT TYPE:\n")
-          print(class(y))
-
-          cat("\nDATA OBJECT NAMES:\n")
-          print(names(y))
 
           cat("\nNUMBER OF PLAYS:\n")
-          print(nrow(y))
+          print(nrow(x))
 
-          cat("\nFIELDS RELATED TO PLAYERS/PARTICIPATION:\n")
+          cat("\nNUMBER OF COLUMNS:\n")
+          print(ncol(x))
 
-          possible <- names(y)[grepl(
-            "player|offense|defense|participant|route|dropback|passer|receiver",
-            names(y),
+          cat("\nPLAYER/DROPBACK RELATED COLUMNS:\n")
+
+          possible <- names(x)[grepl(
+            "player|offense|defense|participant|route|dropback|passer|receiver|posteam",
+            names(x),
             ignore.case = TRUE
           )]
 
           print(possible)
 
-          cat("\nQB DROPBACK FIELD:\n")
+          cat("\nQB DROPBACK:\n")
 
-          if ("qb_dropback" %in% names(y)) {
-            print(table(y$qb_dropback, useNA = "ifany"))
+          if ("qb_dropback" %in% names(x)) {
+            print(table(x$qb_dropback, useNA = "ifany"))
           } else {
             cat("qb_dropback was NOT found.\n")
           }
 
-          cat("\nPOSSIBLE PLAYER/PARTICIPATION FIELDS:\n")
+          cat("\nFIRST FEW DROPBACK PLAYS:\n")
 
-          for (field in possible) {
-            cat("\n--- ", field, " ---\n", sep = "")
-            print(head(y[[field]], 5))
+          if ("qb_dropback" %in% names(x)) {
+            dropbacks <- x[x$qb_dropback == 1, ]
+
+            print(
+              dropbacks[
+                1:min(5, nrow(dropbacks)),
+                possible,
+                drop = FALSE
+              ]
+            )
           }
 
           cat("\n========================================\n")
-          cat("END RAW PBP TEST\n")
+          cat("END PARSED PBP TEST\n")
           cat("========================================\n")
           '
 
